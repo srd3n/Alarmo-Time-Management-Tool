@@ -1,6 +1,3 @@
-"""
-Alarmo Main Application GUI
-"""
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from modules.alarmManager import AlarmManager
@@ -8,19 +5,21 @@ from modules.timeUtils import TimeChecker
 from modules.soundPlayer import play_alarm_sound
 import threading
 from datetime import datetime
+import os
 
+WINDOW_WIDTH = 1200
+WINDOW_HEIGHT = 700
 class AlarmoApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Alarmo - Time Management Tool")
-        self.root.geometry("900x600")
+        self.root.geometry(f"{WINDOW_WIDTH}x{WINDOW_HEIGHT}")
         self.root.configure(bg="#f0f0f0")
-        
+        self.root.geometry(f"+{int(self.root.winfo_screenwidth()/2 - WINDOW_WIDTH/2)}+{int(self.root.winfo_screenheight()/2 - WINDOW_HEIGHT/2)}")
+
         self.alarm_manager = AlarmManager()
         self.time_checker = TimeChecker()
         self.selected_alarm_id = None
-        
-        # Start alarm checking thread
         self.running = True
         self.check_thread = threading.Thread(target=self._check_alarms_loop, daemon=True)
         self.check_thread.start()
@@ -29,116 +28,114 @@ class AlarmoApp:
         self._refresh_alarm_list()
     
     def _create_widgets(self):
-        """Create all GUI widgets"""
-        # Main container
         main_frame = tk.Frame(self.root, bg="#f0f0f0")
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
-        # Left Section - Alarm Creation
         left_frame = tk.Frame(main_frame, bg="#ffffff", relief=tk.RAISED, borderwidth=2)
         left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
-        
-        # Title with icon
         title_frame = tk.Frame(left_frame, bg="#ffffff")
         title_frame.pack(pady=20)
-        
+        try:
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            logo_path = os.path.join(base_dir, "assets", "assets", "sounds", "2227930.png")
+            
+            if os.path.exists(logo_path):
+                logo_image = tk.PhotoImage(file=logo_path)
+                logo_image = logo_image.subsample(8, 8)
+                self.logo_image = logo_image
+            else:
+                logo_path_rel = os.path.join("assets", "assets", "sounds", "2227930.png")
+                if os.path.exists(logo_path_rel):
+                    logo_image = tk.PhotoImage(file=logo_path_rel)
+                    logo_image = logo_image.subsample(8, 8)
+                    self.logo_image = logo_image
+                else:
+                    logo_image = None
+        except Exception as e:
+            print(f"Could not load logo image: {e}")
+            logo_image = None
+        if logo_image:
+            bell_label = tk.Label(
+                title_frame,
+                image=logo_image,
+                bg="#ffffff"
+            )
+            bell_label.pack(side=tk.LEFT, padx=(10, 10))
+        else:
+            bell_label = tk.Label(
+                title_frame,
+                text="🔔",
+                font=("Arial", 28),
+                bg="#ffffff"
+            )
+            bell_label.pack(side=tk.LEFT, padx=(10, 10))
         title_label = tk.Label(
             title_frame, 
             text="Alarmo", 
-            font=("Arial", 24, "bold"),
+            font=("Arial", 28, "bold"),
             bg="#ffffff",
             fg="#333333"
         )
         title_label.pack(side=tk.LEFT, padx=10)
-        
-        # Bell icon (using emoji/unicode)
-        bell_label = tk.Label(
-            title_frame,
-            text="🔔",
-            font=("Arial", 24),
-            bg="#ffffff"
-        )
-        bell_label.pack(side=tk.LEFT)
-        
-        # Time input fields
         time_frame = tk.Frame(left_frame, bg="#ffffff")
         time_frame.pack(pady=20)
-        
-        # Hour
-        tk.Label(time_frame, text="hour", font=("Arial", 10), bg="#ffffff").grid(row=0, column=0, padx=5)
+        tk.Label(time_frame, text="hour", font=("Arial", 14, "bold"), bg="#ffffff").grid(row=0, column=0, padx=5)
         self.hour_var = tk.StringVar(value="06")
-        hour_entry = tk.Entry(time_frame, textvariable=self.hour_var, width=8, font=("Arial", 12), 
+        hour_entry = tk.Entry(time_frame, textvariable=self.hour_var, width=10, font=("Arial", 16), 
                              bg="#e0e0e0", relief=tk.SUNKEN, borderwidth=2)
         hour_entry.grid(row=1, column=0, padx=5, pady=5)
-        
-        # Minute
-        tk.Label(time_frame, text="min", font=("Arial", 10), bg="#ffffff").grid(row=0, column=1, padx=5)
+        tk.Label(time_frame, text="min", font=("Arial", 14, "bold"), bg="#ffffff").grid(row=0, column=1, padx=5)
         self.minute_var = tk.StringVar(value="00")
-        minute_entry = tk.Entry(time_frame, textvariable=self.minute_var, width=8, font=("Arial", 12),
+        minute_entry = tk.Entry(time_frame, textvariable=self.minute_var, width=10, font=("Arial", 16),
                                bg="#e0e0e0", relief=tk.SUNKEN, borderwidth=2)
         minute_entry.grid(row=1, column=1, padx=5, pady=5)
-        
-        # Second
-        tk.Label(time_frame, text="sec", font=("Arial", 10), bg="#ffffff").grid(row=0, column=2, padx=5)
+        tk.Label(time_frame, text="sec", font=("Arial", 14, "bold"), bg="#ffffff").grid(row=0, column=2, padx=5)
         self.second_var = tk.StringVar(value="00")
-        second_entry = tk.Entry(time_frame, textvariable=self.second_var, width=8, font=("Arial", 12),
+        second_entry = tk.Entry(time_frame, textvariable=self.second_var, width=10, font=("Arial", 16),
                                bg="#e0e0e0", relief=tk.SUNKEN, borderwidth=2)
         second_entry.grid(row=1, column=2, padx=5, pady=5)
-        
-        # Period (AM/PM)
-        tk.Label(time_frame, text="period", font=("Arial", 10), bg="#ffffff").grid(row=0, column=3, padx=5)
+        tk.Label(time_frame, text="period", font=("Arial", 14, "bold"), bg="#ffffff").grid(row=0, column=3, padx=5)
         self.period_var = tk.StringVar(value="AM")
         period_menu = tk.OptionMenu(time_frame, self.period_var, "AM", "PM")
-        period_menu.config(width=6, font=("Arial", 12), bg="#e0e0e0", relief=tk.SUNKEN, borderwidth=2)
+        period_menu.config(width=8, font=("Arial", 16), bg="#e0e0e0", relief=tk.SUNKEN, borderwidth=2)
         period_menu.grid(row=1, column=3, padx=5, pady=5)
-        
-        # Note field
         note_frame = tk.Frame(left_frame, bg="#ffffff")
         note_frame.pack(pady=20, padx=20, fill=tk.BOTH, expand=True)
         
-        tk.Label(note_frame, text="note", font=("Arial", 10), bg="#ffffff").pack(anchor=tk.W)
+        tk.Label(note_frame, text="note", font=("Arial", 14, "bold"), bg="#ffffff").pack(anchor=tk.W)
         self.note_text = scrolledtext.ScrolledText(
             note_frame, 
             height=8, 
             width=30,
-            font=("Arial", 10),
+            font=("Arial", 14),
             bg="#e0e0e0",
             relief=tk.SUNKEN,
             borderwidth=2
         )
         self.note_text.pack(fill=tk.BOTH, expand=True, pady=5)
-        
-        # Add Alarm button
         add_button = tk.Button(
             left_frame,
             text="ADD ALARM",
             command=self._add_alarm,
-            font=("Arial", 14, "bold"),
+            font=("Arial", 18, "bold"),
             bg="#FFD700",
             fg="#000000",
             relief=tk.RAISED,
             borderwidth=3,
-            padx=20,
-            pady=10,
+            padx=30,
+            pady=15,
             cursor="hand2"
         )
         add_button.pack(pady=20)
-        
-        # Right Section - Active Alarms
         right_frame = tk.Frame(main_frame, bg="#ffffff", relief=tk.RAISED, borderwidth=2)
         right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(5, 0))
-        
-        # Title
         title_label_right = tk.Label(
             right_frame,
             text="Active Alarms",
-            font=("Arial", 20, "bold"),
+            font=("Arial", 24, "bold"),
             bg="#ffffff",
             fg="#333333"
         )
         title_label_right.pack(pady=20)
-        
-        # Action buttons
         button_frame = tk.Frame(right_frame, bg="#ffffff")
         button_frame.pack(pady=10)
         
@@ -146,13 +143,13 @@ class AlarmoApp:
             button_frame,
             text="DELETE",
             command=self._delete_alarm,
-            font=("Arial", 12, "bold"),
+            font=("Arial", 14, "bold"),
             bg="#FFD700",
             fg="#000000",
             relief=tk.RAISED,
             borderwidth=2,
-            padx=15,
-            pady=5,
+            padx=20,
+            pady=8,
             cursor="hand2"
         )
         delete_button.pack(side=tk.LEFT, padx=5)
@@ -161,13 +158,13 @@ class AlarmoApp:
             button_frame,
             text="UPDATE",
             command=self._update_alarm,
-            font=("Arial", 12, "bold"),
+            font=("Arial", 14, "bold"),
             bg="#FFD700",
             fg="#000000",
             relief=tk.RAISED,
             borderwidth=2,
-            padx=15,
-            pady=5,
+            padx=20,
+            pady=8,
             cursor="hand2"
         )
         update_button.pack(side=tk.LEFT, padx=5)
@@ -176,28 +173,24 @@ class AlarmoApp:
             button_frame,
             text="HISTORY",
             command=self._show_history,
-            font=("Arial", 12, "bold"),
+            font=("Arial", 14, "bold"),
             bg="#FFD700",
             fg="#000000",
             relief=tk.RAISED,
             borderwidth=2,
-            padx=15,
-            pady=5,
+            padx=20,
+            pady=8,
             cursor="hand2"
         )
         history_button.pack(side=tk.LEFT, padx=5)
-        
-        # Alarm list
         list_frame = tk.Frame(right_frame, bg="#ffffff")
         list_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
-        
-        # Listbox with scrollbar
         scrollbar = tk.Scrollbar(list_frame)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
         self.alarm_listbox = tk.Listbox(
             list_frame,
-            font=("Arial", 11),
+            font=("Arial", 14),
             bg="#e0e0e0",
             relief=tk.SUNKEN,
             borderwidth=2,
@@ -211,15 +204,12 @@ class AlarmoApp:
         scrollbar.config(command=self.alarm_listbox.yview)
     
     def _add_alarm(self):
-        """Add a new alarm"""
         try:
             hour = int(self.hour_var.get())
             minute = int(self.minute_var.get())
             second = int(self.second_var.get())
             period = self.period_var.get()
             note = self.note_text.get("1.0", tk.END).strip()
-            
-            # Validation
             if not (0 <= hour <= 12):
                 messagebox.showerror("Error", "Hour must be between 0 and 12")
                 return
@@ -229,10 +219,8 @@ class AlarmoApp:
             if not (0 <= second <= 59):
                 messagebox.showerror("Error", "Second must be between 0 and 59")
                 return
-            
             if hour == 0:
                 hour = 12
-            
             self.alarm_manager.create_alarm(hour, minute, second, period, note)
             self._refresh_alarm_list()
             self._clear_inputs()
@@ -241,7 +229,6 @@ class AlarmoApp:
             messagebox.showerror("Error", "Please enter valid numbers for time")
     
     def _delete_alarm(self):
-        """Delete selected alarm"""
         if self.selected_alarm_id is None:
             messagebox.showwarning("Warning", "Please select an alarm to delete")
             return
@@ -253,7 +240,6 @@ class AlarmoApp:
             messagebox.showinfo("Success", "Alarm deleted successfully!")
     
     def _update_alarm(self):
-        """Update selected alarm"""
         if self.selected_alarm_id is None:
             messagebox.showwarning("Warning", "Please select an alarm to update")
             return
@@ -264,8 +250,6 @@ class AlarmoApp:
             second = int(self.second_var.get())
             period = self.period_var.get()
             note = self.note_text.get("1.0", tk.END).strip()
-            
-            # Validation
             if not (0 <= hour <= 12):
                 messagebox.showerror("Error", "Hour must be between 0 and 12")
                 return
@@ -275,10 +259,8 @@ class AlarmoApp:
             if not (0 <= second <= 59):
                 messagebox.showerror("Error", "Second must be between 0 and 59")
                 return
-            
             if hour == 0:
                 hour = 12
-            
             self.alarm_manager.update_alarm(
                 self.selected_alarm_id,
                 hour=hour,
@@ -295,7 +277,6 @@ class AlarmoApp:
             messagebox.showerror("Error", "Please enter valid numbers for time")
     
     def _show_history(self):
-        """Show alarm history"""
         history = self.alarm_manager.get_history()
         
         history_window = tk.Toplevel(self.root)
@@ -318,7 +299,6 @@ class AlarmoApp:
         history_text.config(state=tk.DISABLED)
     
     def _on_alarm_select(self, event):
-        """Handle alarm selection"""
         selection = self.alarm_listbox.curselection()
         if selection:
             index = selection[0]
@@ -329,7 +309,6 @@ class AlarmoApp:
                 self._load_alarm_to_form(alarm)
     
     def _load_alarm_to_form(self, alarm):
-        """Load alarm data into form fields"""
         self.hour_var.set(str(alarm.get('hour_12', alarm.get('hour', 0))))
         self.minute_var.set(str(alarm.get('minute', 0)))
         self.second_var.set(str(alarm.get('second', 0)))
@@ -338,7 +317,6 @@ class AlarmoApp:
         self.note_text.insert("1.0", alarm.get('note', ''))
     
     def _clear_inputs(self):
-        """Clear input fields"""
         self.hour_var.set("06")
         self.minute_var.set("00")
         self.second_var.set("00")
@@ -346,7 +324,6 @@ class AlarmoApp:
         self.note_text.delete("1.0", tk.END)
     
     def _refresh_alarm_list(self):
-        """Refresh the alarm list display"""
         self.alarm_listbox.delete(0, tk.END)
         alarms = self.alarm_manager.read_alarms()
         
@@ -357,33 +334,25 @@ class AlarmoApp:
             self.alarm_listbox.insert(tk.END, display_text)
     
     def _check_alarms_loop(self):
-        """Background thread to check alarms"""
         import time
         while self.running:
             try:
                 alarms = self.alarm_manager.read_alarms()
                 triggered = self.time_checker.check_alarms(alarms)
-                
                 for alarm in triggered:
-                    # Play sound
                     play_alarm_sound()
-                    
-                    # Show notification
                     self.root.after(0, lambda a=alarm: self._show_alarm_notification(a))
-                
-                time.sleep(1)  # Check every second
+                time.sleep(1)
             except Exception as e:
                 print(f"Error checking alarms: {e}")
                 time.sleep(1)
     
     def _show_alarm_notification(self, alarm):
-        """Show alarm notification"""
         time_str = self.alarm_manager.format_alarm_time(alarm)
         note = alarm.get('note', 'No note')
         messagebox.showinfo("Alarm!", f"{time_str}\n{note}")
     
     def on_closing(self):
-        """Handle window closing"""
         self.running = False
         self.root.destroy()
 
