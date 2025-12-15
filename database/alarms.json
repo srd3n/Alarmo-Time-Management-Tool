@@ -1,9 +1,1 @@
-[
-    {
-        "id": 1,
-        "time": "07:30",
-        "days": ["Mon", "Tue", "Wed"],
-        "label": "Daily Morning Routine",
-        "active": true
-    }
-]
+[]

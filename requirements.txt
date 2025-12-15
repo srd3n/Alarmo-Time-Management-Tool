@@ -1,0 +1,8 @@
+ tkinter==8.6.12
+ ttk==8.6.12
+ messagebox==8.6.12
+ scrolledtext==8.6.12
+ json==2.0.9
+ platform==3.9.18
+ threading==3.9.18
+ typing==3.9.18
